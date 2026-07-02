@@ -151,9 +151,6 @@ jobs:
       - name: Type check @librechat/api
         run: npx tsc --noEmit -p packages/api/tsconfig.json
 
-      - name: Type check @librechat/client
-        run: npx tsc --noEmit -p packages/client/tsconfig.json
-
   circular-deps:
     name: Circular dependency checks
     needs: build

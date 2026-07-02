@@ -27,8 +27,6 @@ COPY package*.json ./
 COPY packages/data-provider/package*.json ./packages/data-provider/
 COPY packages/api/package*.json ./packages/api/
 COPY packages/data-schemas/package*.json ./packages/data-schemas/
-COPY packages/client/package*.json ./packages/client/
-COPY client/package*.json ./client/
 COPY api/package*.json ./api/
 
 # Install all dependencies for every build
@@ -69,25 +67,7 @@ COPY --from=data-provider-build /app/packages/data-provider/dist /app/packages/d
 COPY --from=data-schemas-build /app/packages/data-schemas/dist /app/packages/data-schemas/dist
 RUN npm run build
 
-# Build `client` package
-FROM base AS client-package-build
-WORKDIR /app/packages/client
-COPY packages/client ./
-COPY --from=data-provider-build /app/packages/data-provider/dist /app/packages/data-provider/dist
-RUN npm run build
-
-# Client build
-FROM base AS client-build
-WORKDIR /app/client
-COPY client ./
-COPY --from=data-provider-build /app/packages/data-provider/dist /app/packages/data-provider/dist
-COPY --from=client-package-build /app/packages/client/dist /app/packages/client/dist
-COPY --from=client-package-build /app/packages/client/src /app/packages/client/src
-ARG NODE_MAX_OLD_SPACE_SIZE
-ENV NODE_OPTIONS="--max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE}"
-RUN npm run build
-
-# API setup (including client dist)
+# API setup
 FROM base-min AS api-build
 ARG NPM_CI_TIMEOUT_SECONDS=1500
 ARG NPM_CI_ATTEMPTS=2
@@ -113,7 +93,7 @@ COPY skill ./skill
 COPY --from=data-provider-build /app/packages/data-provider/dist ./packages/data-provider/dist
 COPY --from=data-schemas-build /app/packages/data-schemas/dist ./packages/data-schemas/dist
 COPY --from=api-package-build /app/packages/api/dist ./packages/api/dist
-COPY --from=client-build /app/client/dist ./client/dist
+RUN mkdir -p /app/client/public/images /app/logs /app/uploads
 # Propagate build metadata into runtime env so /api/config can expose it.
 # Declared here (after the heavy install/copy steps) so that commit/date
 # changing on every CI run does not bust the cache for those layers.
