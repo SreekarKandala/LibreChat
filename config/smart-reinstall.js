@@ -16,7 +16,6 @@
  * Usage:
  *   npm run smart-reinstall                  # Smart cached mode
  *   npm run smart-reinstall -- --force       # Full clean reinstall, bust all caches
- *   npm run smart-reinstall -- --skip-client # Skip frontend (Vite) build
  *   npm run smart-reinstall -- --clean-cache # Wipe turbo build cache
  *   npm run smart-reinstall -- --verbose     # Turbo verbose output
  */
@@ -34,7 +33,6 @@ const DEPS_HASH_MARKER = path.join(ROOT_DIR, 'node_modules', '.librechat-deps-ha
 const flags = {
   force: process.argv.includes('--force'),
   cleanCache: process.argv.includes('--clean-cache'),
-  skipClient: process.argv.includes('--skip-client'),
   verbose: process.argv.includes('--verbose'),
 };
 
@@ -42,9 +40,7 @@ const NODE_MODULES_DIRS = [
   ROOT_DIR,
   path.join(ROOT_DIR, 'packages', 'data-provider'),
   path.join(ROOT_DIR, 'packages', 'data-schemas'),
-  path.join(ROOT_DIR, 'packages', 'client'),
   path.join(ROOT_DIR, 'packages', 'api'),
-  path.join(ROOT_DIR, 'client'),
   path.join(ROOT_DIR, 'api'),
 ];
 
@@ -91,9 +87,6 @@ function installDeps(hash) {
 function runTurboBuild() {
   const args = ['npx', 'turbo', 'run', 'build'];
 
-  if (flags.skipClient) {
-    args.push('--filter=!@librechat/frontend');
-  }
   if (flags.force) {
     args.push('--force');
   }

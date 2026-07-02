@@ -19,9 +19,7 @@ const directories = [
   rootDir,
   path.resolve(rootDir, 'packages', 'data-provider'),
   path.resolve(rootDir, 'packages', 'data-schemas'),
-  path.resolve(rootDir, 'packages', 'client'),
   path.resolve(rootDir, 'packages', 'api'),
-  path.resolve(rootDir, 'client'),
   path.resolve(rootDir, 'api'),
 ];
 
@@ -117,9 +115,9 @@ async function validateDockerRunning() {
     console.purple('Installing dependencies...');
     execSync('npm ci', { stdio: 'inherit' });
 
-    // Build client-side code
-    console.purple('Building frontend...');
-    execSync(bun ? 'bun b:client' : 'npm run frontend', { stdio: 'inherit' });
+    // Build backend workspace packages
+    console.purple('Building packages...');
+    execSync('npm run build:packages', { stdio: 'inherit' });
   }
 
   let startCommand = 'npm run backend';
