@@ -35,9 +35,11 @@ each environment at its own connection string gives each one fully isolated data
 
 Because each environment has its own database, per-DB state must be created in each:
 
-- **Service account** used by the Angular `LibrechatApiService`:
-  `npm run create-user` (run with that environment's env file loaded, e.g.
-  `node --env-file=.env.uat config/create-user.js`).
+- **Service account** the backend acts as (`NO_AUTH_USER_EMAIL`): create it once per
+  database with `node --env-file=.env.uat config/create-user.js`. With `NO_AUTH=true`
+  the Angular client sends no credentials or tokens — every request runs as this user.
+  **This makes the API open to anyone who can reach it**: it must not be directly
+  exposed to the internet; restrict it to the app's network / reverse proxy.
 - **Agents / actions** are per-database — recreate or export/import them per env.
 - Tokens are signed per-`JWT_SECRET`, so tokens never carry across environments
   (the Angular client already scopes its cached token by backend URL).

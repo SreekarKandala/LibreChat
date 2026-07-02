@@ -2,6 +2,7 @@ const cookies = require('cookie');
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const { logger } = require('@librechat/data-schemas');
+const { SystemRoles } = require('librechat-data-provider');
 const {
   isEnabled,
   tenantContextMiddleware,
@@ -12,6 +13,47 @@ const {
   maybeRefreshCloudFrontAuthCookiesMiddleware,
   recordRumProxyRequest,
 } = require('@librechat/api');
+const { findUser } = require('~/models');
+
+/**
+ * NO_AUTH mode: every request runs as the single service user named by
+ * NO_AUTH_USER_EMAIL, with no JWT required. Only for deployments where the
+ * backend is reachable exclusively through an already-authenticated upstream
+ * (network-isolated or proxy-gated) — the API itself accepts all callers.
+ */
+let noAuthUserPromise = null;
+const loadNoAuthUser = () => {
+  if (noAuthUserPromise) {
+    return noAuthUserPromise;
+  }
+  noAuthUserPromise = (async () => {
+    const email = process.env.NO_AUTH_USER_EMAIL;
+    if (!email) {
+      throw new Error('NO_AUTH is enabled but NO_AUTH_USER_EMAIL is not set');
+    }
+    const user = await findUser({ email }, '-password -__v -totpSecret -backupCodes');
+    if (!user) {
+      throw new Error(`NO_AUTH_USER_EMAIL does not match any user: ${email}`);
+    }
+    user.id = user._id.toString();
+    user.role = user.role ?? SystemRoles.USER;
+    return user;
+  })().catch((err) => {
+    noAuthUserPromise = null;
+    throw err;
+  });
+  return noAuthUserPromise;
+};
+
+const noAuthBypass = (req, res, next) => {
+  loadNoAuthUser()
+    .then((user) => {
+      req.user = { ...user };
+      req.authStrategy = 'no-auth';
+      tenantContextMiddleware(req, res, next);
+    })
+    .catch(next);
+};
 
 const hasPassportStrategy = (strategy) =>
   typeof passport._strategy === 'function' && passport._strategy(strategy) != null;
@@ -84,6 +126,9 @@ const isOpenIdReuseUser = (strategy, user, openIdReuseUserId) =>
  * for downstream Mongoose tenant isolation and structured logging.
  */
 const requireJwtAuth = (req, res, next) => {
+  if (isEnabled(process.env.NO_AUTH)) {
+    return noAuthBypass(req, res, next);
+  }
   const { tokenProvider, openidReuseEnabled, openidJwtAvailable, openIdReuseUserId, strategies } =
     getAuthStrategies(req);
   const authLogState = {
