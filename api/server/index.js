@@ -187,27 +187,18 @@ const startServer = async () => {
   /* Per-request capability cache — must be registered before any route that calls hasCapability */
   app.use(capabilityContextMiddleware);
 
-  /* Pre-auth tenant context for unauthenticated routes that need tenant scoping.
-   * The reverse proxy / auth gateway sets `X-Tenant-Id` header for multi-tenant deployments. */
-  app.use('/oauth', preAuthTenantMiddleware, routes.oauth);
   /* API Endpoints */
   app.use('/api/auth', preAuthTenantMiddleware, routes.auth);
   app.use('/api/actions', routes.actions);
-  app.use('/api/keys', routes.keys);
-  app.use('/api/user', routes.user);
   app.use('/api/messages', routes.messages);
   app.use('/api/convos', routes.convos);
   app.use('/api/categories', routes.categories);
   app.use('/api/endpoints', routes.endpoints);
-  app.use('/api/balance', routes.balance);
   app.use('/api/models', routes.models);
   app.use('/api/files', await routes.files.initialize());
   app.use('/images/', createValidateImageRequest(appConfig.secureImageLinks), routes.staticRoute);
-  app.use('/api/roles', routes.roles);
   app.use('/api/agents/chat', rejectChatStartsUntilReady);
   app.use('/api/agents', routes.agents);
-  app.use('/api/permissions', routes.accessPermissions);
-  app.use('/api/mcp', routes.mcp);
 
   app.use('/metrics', metricsRouter);
 
