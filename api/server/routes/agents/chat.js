@@ -2,12 +2,10 @@ const express = require('express');
 const { logger } = require('@librechat/data-schemas');
 const {
   createMessageFilterPii,
-  generateCheckAccess,
-  skipAgentCheck,
   applyResumeContext,
   GenerationJobManager,
 } = require('@librechat/api');
-const { PermissionTypes, Permissions, PermissionBits } = require('librechat-data-provider');
+const { PermissionBits } = require('librechat-data-provider');
 const {
   moderateText,
   // validateModel,
@@ -19,16 +17,9 @@ const { initializeClient } = require('~/server/services/Endpoints/agents');
 const AgentController = require('~/server/controllers/agents/request');
 const ResumeController = require('~/server/controllers/agents/resume');
 const addTitle = require('~/server/services/Endpoints/agents/title');
-const { getRoleByName } = require('~/models');
 
 const router = express.Router();
 
-const checkAgentAccess = generateCheckAccess({
-  permissionType: PermissionTypes.AGENTS,
-  permissions: [Permissions.USE],
-  skipCheck: skipAgentCheck,
-  getRoleByName,
-});
 const checkAgentResourceAccess = canAccessAgentFromBody({
   requiredPermission: PermissionBits.VIEW,
 });
@@ -74,7 +65,6 @@ const restoreResumeContext = async (req, res, next) => {
 router.use(restoreResumeContext);
 router.use(createMessageFilterPii({ getConfig: (req) => req.config?.messageFilter?.pii }));
 router.use(moderateText);
-router.use(checkAgentAccess);
 router.use(checkAgentResourceAccess);
 router.use(validateConvoAccess);
 router.use(buildEndpointOption);

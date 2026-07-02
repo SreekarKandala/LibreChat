@@ -11,16 +11,12 @@ const {
 const { createSseStreamTelemetry } = require('@librechat/api/telemetry');
 const { logger } = require('@librechat/data-schemas');
 const {
-  uaParser,
-  checkBan,
   requireJwtAuth,
   messageIpLimiter,
   configMiddleware,
   messageUserLimiter,
 } = require('~/server/middleware');
 const { saveMessage } = require('~/models');
-const responses = require('./responses');
-const openai = require('./openai');
 const { v1 } = require('./v1');
 const chat = require('./chat');
 
@@ -33,23 +29,7 @@ function hasTenantMismatch(job, user) {
 
 const router = express.Router();
 
-/**
- * Open Responses API routes (API key authentication handled in route file)
- * Mounted at /agents/v1/responses (full path: /api/agents/v1/responses)
- * NOTE: Must be mounted BEFORE /v1 to avoid being caught by the less specific route
- * @see https://openresponses.org/specification
- */
-router.use('/v1/responses', responses);
-
-/**
- * OpenAI-compatible API routes (API key authentication handled in route file)
- * Mounted at /agents/v1 (full path: /api/agents/v1/chat/completions)
- */
-router.use('/v1', openai);
-
 router.use(requireJwtAuth);
-router.use(checkBan);
-router.use(uaParser);
 
 /**
  * Stream endpoints - mounted before chatRouter to bypass rate limiters

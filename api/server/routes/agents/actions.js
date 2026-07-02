@@ -2,7 +2,6 @@ const express = require('express');
 const { nanoid } = require('nanoid');
 const { logger } = require('@librechat/data-schemas');
 const {
-  generateCheckAccess,
   planAgentActionUpdate,
   isActionDomainAllowed,
   legacyActionDomainEncode,
@@ -11,10 +10,8 @@ const {
   buildActionOAuthTokenDeleteQueries,
 } = require('@librechat/api');
 const {
-  Permissions,
   ResourceType,
   PermissionBits,
-  PermissionTypes,
   actionDelimiter,
   removeNullishValues,
   validateActionDomain,
@@ -33,12 +30,6 @@ async function deleteActionOAuthTokens(action_id) {
     buildActionOAuthTokenDeleteQueries(action_id).map((query) => db.deleteTokens(query)),
   );
 }
-
-const checkAgentCreate = generateCheckAccess({
-  permissionType: PermissionTypes.AGENTS,
-  permissions: [Permissions.USE, Permissions.CREATE],
-  getRoleByName: db.getRoleByName,
-});
 
 /**
  * Retrieves all user's actions
@@ -88,7 +79,6 @@ router.post(
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'agent_id',
   }),
-  checkAgentCreate,
   async (req, res) => {
     try {
       const { agent_id } = req.params;
@@ -258,7 +248,6 @@ router.delete(
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'agent_id',
   }),
-  checkAgentCreate,
   async (req, res) => {
     try {
       const { agent_id, action_id } = req.params;

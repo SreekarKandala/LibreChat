@@ -3,8 +3,6 @@ const {
   createFileLimiters,
   configMiddleware,
   requireJwtAuth,
-  uaParser,
-  checkBan,
 } = require('~/server/middleware');
 const { restoreTenantContextFromReq } = require('@librechat/api');
 const { avatar: agentAvatarRouter } = require('~/server/routes/agents/v1');
@@ -19,8 +17,6 @@ const initialize = async () => {
   const router = express.Router();
   router.use(requireJwtAuth);
   router.use(configMiddleware);
-  router.use(checkBan);
-  router.use(uaParser);
 
   const upload = await createMulterInstance();
   router.post('/speech/stt', upload.single('audio'), restoreTenantContextFromReq);

@@ -4,7 +4,6 @@ require('module-alias')({ base: path.resolve(__dirname, '..') });
 const cors = require('cors');
 const axios = require('axios');
 const express = require('express');
-const passport = require('passport');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
@@ -21,7 +20,6 @@ const {
   createStreamServices,
   initializeFileStorage,
   initializeDeploymentSkills,
-  preAuthTenantMiddleware,
   setupGracefulShutdown,
   updateInterfacePermissions,
 } = require('@librechat/api');
@@ -37,15 +35,13 @@ const { capabilityContextMiddleware } = require('./middleware/roles/capabilities
 const createValidateImageRequest = require('./middleware/validateImageRequest');
 const { startExpiredFileSweep } = require('./services/Files/process');
 const { initializeGitHubSkillSync } = require('./services/Skills/sync');
-const { jwtLogin, ldapLogin, passportLogin } = require('~/strategies');
 const { checkMigrations } = require('./services/start/migration');
 const initializeMCPs = require('./services/initializeMCPs');
-const configureSocialLogins = require('./socialLogins');
 const { getAppConfig } = require('./services/Config');
 const noIndex = require('./middleware/noIndex');
 const routes = require('./routes');
 
-const { PORT, HOST, ALLOW_SOCIAL_LOGIN, DISABLE_COMPRESSION, TRUST_PROXY } = process.env ?? {};
+const { PORT, HOST, DISABLE_COMPRESSION, TRUST_PROXY } = process.env ?? {};
 
 // Allow PORT=0 to be used for automatic free port assignment
 const port = isNaN(Number(PORT)) ? 3080 : Number(PORT);
@@ -166,29 +162,10 @@ const startServer = async () => {
     app.use(telemetry.telemetryMiddleware);
   }
 
-  if (!ALLOW_SOCIAL_LOGIN) {
-    console.warn('Social logins are disabled. Set ALLOW_SOCIAL_LOGIN=true to enable them.');
-  }
-
-  /* OAUTH */
-  app.use(passport.initialize());
-  passport.use(jwtLogin());
-  passport.use(passportLogin());
-
-  /* LDAP Auth */
-  if (process.env.LDAP_URL && process.env.LDAP_USER_SEARCH_BASE) {
-    passport.use(ldapLogin);
-  }
-
-  if (isEnabled(ALLOW_SOCIAL_LOGIN)) {
-    await configureSocialLogins(app);
-  }
-
   /* Per-request capability cache — must be registered before any route that calls hasCapability */
   app.use(capabilityContextMiddleware);
 
   /* API Endpoints */
-  app.use('/api/auth', preAuthTenantMiddleware, routes.auth);
   app.use('/api/actions', routes.actions);
   app.use('/api/messages', routes.messages);
   app.use('/api/convos', routes.convos);

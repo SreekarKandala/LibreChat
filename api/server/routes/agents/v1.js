@@ -1,25 +1,12 @@
 const express = require('express');
-const { generateCheckAccess } = require('@librechat/api');
-const { PermissionTypes, Permissions, PermissionBits } = require('librechat-data-provider');
+const { PermissionBits } = require('librechat-data-provider');
 const { requireJwtAuth, configMiddleware, canAccessAgentResource } = require('~/server/middleware');
 const v1 = require('~/server/controllers/agents/v1');
-const { getRoleByName } = require('~/models');
 const actions = require('./actions');
 const tools = require('./tools');
 
 const router = express.Router();
 const avatar = express.Router();
-
-const checkAgentAccess = generateCheckAccess({
-  permissionType: PermissionTypes.AGENTS,
-  permissions: [Permissions.USE],
-  getRoleByName,
-});
-const checkAgentCreate = generateCheckAccess({
-  permissionType: PermissionTypes.AGENTS,
-  permissions: [Permissions.USE, Permissions.CREATE],
-  getRoleByName,
-});
 
 router.use(requireJwtAuth);
 
@@ -46,7 +33,7 @@ router.get('/categories', v1.getAgentCategories);
  * @param {AgentCreateParams} req.body - The agent creation parameters.
  * @returns {Agent} 201 - Success response - application/json
  */
-router.post('/', checkAgentCreate, v1.createAgent);
+router.post('/', v1.createAgent);
 
 /**
  * Retrieves basic agent information (VIEW permission required).
@@ -57,7 +44,6 @@ router.post('/', checkAgentCreate, v1.createAgent);
  */
 router.get(
   '/:id',
-  checkAgentAccess,
   canAccessAgentResource({
     requiredPermission: PermissionBits.VIEW,
     resourceIdParam: 'id',
@@ -74,7 +60,6 @@ router.get(
  */
 router.get(
   '/:id/expanded',
-  checkAgentAccess,
   canAccessAgentResource({
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'id',
@@ -91,7 +76,6 @@ router.get(
  */
 router.get(
   '/:id/versions',
-  checkAgentAccess,
   canAccessAgentResource({
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'id',
@@ -107,7 +91,6 @@ router.get(
  */
 router.patch(
   '/:id',
-  checkAgentCreate,
   canAccessAgentResource({
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'id',
@@ -123,7 +106,6 @@ router.patch(
  */
 router.post(
   '/:id/duplicate',
-  checkAgentCreate,
   canAccessAgentResource({
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'id',
@@ -139,7 +121,6 @@ router.post(
  */
 router.delete(
   '/:id',
-  checkAgentCreate,
   canAccessAgentResource({
     requiredPermission: PermissionBits.DELETE,
     resourceIdParam: 'id',
@@ -156,7 +137,6 @@ router.delete(
  */
 router.post(
   '/:id/revert',
-  checkAgentCreate,
   canAccessAgentResource({
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'id',
@@ -170,7 +150,7 @@ router.post(
  * @param {AgentListParams} req.query - The agent list parameters for pagination and sorting.
  * @returns {AgentListResponse} 200 - success response - application/json
  */
-router.get('/', checkAgentAccess, v1.getListAgents);
+router.get('/', v1.getListAgents);
 
 /**
  * Uploads and updates an avatar for a specific agent.
@@ -182,7 +162,6 @@ router.get('/', checkAgentAccess, v1.getListAgents);
  */
 avatar.post(
   '/:agent_id/avatar/',
-  checkAgentAccess,
   canAccessAgentResource({
     requiredPermission: PermissionBits.EDIT,
     resourceIdParam: 'agent_id',
