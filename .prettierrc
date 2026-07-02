@@ -1,5 +1,4 @@
 {
-  "tailwindConfig": "./client/tailwind.config.cjs",
   "printWidth": 100,
   "tabWidth": 2,
   "useTabs": false,
@@ -14,6 +13,5 @@
   "requirePragma": false,
   "rangeStart": 0,
   "endOfLine": "auto",
-  "jsxSingleQuote": false,
-  "plugins": ["prettier-plugin-tailwindcss"]
+  "jsxSingleQuote": false
 }

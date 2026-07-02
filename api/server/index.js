@@ -1,5 +1,4 @@
 const telemetry = require('./telemetry');
-const fs = require('fs');
 const path = require('path');
 require('module-alias')({ base: path.resolve(__dirname, '..') });
 const cors = require('cors');
@@ -19,11 +18,9 @@ const {
   performStartupChecks,
   handleJsonParseError,
   GenerationJobManager,
-  QUERY_DEVTOOLS_HEADER,
   createStreamServices,
   initializeFileStorage,
   initializeDeploymentSkills,
-  maybeInjectQueryDevtoolsBootstrap,
   preAuthTenantMiddleware,
   setupGracefulShutdown,
   updateInterfacePermissions,
@@ -45,9 +42,7 @@ const { checkMigrations } = require('./services/start/migration');
 const optionalJwtAuth = require('./middleware/optionalJwtAuth');
 const initializeMCPs = require('./services/initializeMCPs');
 const configureSocialLogins = require('./socialLogins');
-const createSpaFallback = require('./utils/fallback');
 const { getAppConfig } = require('./services/Config');
-const staticCache = require('./utils/staticCache');
 const noIndex = require('./middleware/noIndex');
 const routes = require('./routes');
 
@@ -129,39 +124,6 @@ const startServer = async () => {
     await updateInterfacePermissions({ appConfig, getRoleByName, updateAccessPermissions });
   });
 
-  const indexPath = path.join(appConfig.paths.dist, 'index.html');
-  let indexHTML = fs.readFileSync(indexPath, 'utf8');
-
-  // In order to provide support to serving the application in a sub-directory
-  // We need to update the base href if the DOMAIN_CLIENT is specified and not the root path
-  if (process.env.DOMAIN_CLIENT) {
-    const clientUrl = new URL(process.env.DOMAIN_CLIENT);
-    const baseHref = clientUrl.pathname.endsWith('/')
-      ? clientUrl.pathname
-      : `${clientUrl.pathname}/`;
-    if (baseHref !== '/') {
-      logger.info(`Setting base href to ${baseHref}`);
-      indexHTML = indexHTML.replace(/base href="\/"/, `base href="${baseHref}"`);
-    }
-  }
-
-  const sendIndexHtml = (req, res) => {
-    res.set({
-      'Cache-Control': process.env.INDEX_CACHE_CONTROL || 'no-cache, no-store, must-revalidate',
-      Pragma: process.env.INDEX_PRAGMA || 'no-cache',
-      Expires: process.env.INDEX_EXPIRES || '0',
-    });
-    res.vary(QUERY_DEVTOOLS_HEADER);
-
-    const lang = req.cookies.lang || req.headers['accept-language']?.split(',')[0] || 'en-US';
-    const saneLang = lang.replace(/"/g, '&quot;');
-    let updatedIndexHtml = indexHTML.replace(/lang="en-US"/g, `lang="${saneLang}"`);
-    updatedIndexHtml = maybeInjectQueryDevtoolsBootstrap(updatedIndexHtml, req);
-
-    res.type('html');
-    res.send(updatedIndexHtml);
-  };
-
   app.get('/health', (_req, res) => res.status(200).send('OK'));
   app.get('/livez', (_req, res) => res.status(200).send('OK'));
   app.get('/readyz', (_req, res) => {
@@ -200,11 +162,6 @@ const startServer = async () => {
   } else {
     console.warn('Response compression has been disabled via DISABLE_COMPRESSION.');
   }
-
-  app.get('/index.html', sendIndexHtml);
-  app.use(staticCache(appConfig.paths.dist));
-  app.use(staticCache(appConfig.paths.fonts));
-  app.use(staticCache(appConfig.paths.assets));
 
   if (telemetry.enabled) {
     app.use(telemetry.telemetryMiddleware);
@@ -279,9 +236,6 @@ const startServer = async () => {
 
   /** 404 for unmatched API routes */
   app.use('/api', apiNotFound);
-
-  /** SPA fallback - serve index.html for all unmatched routes */
-  app.use(createSpaFallback(sendIndexHtml));
 
   /** Record trace errors before the final error controller. */
   if (telemetry.enabled) {

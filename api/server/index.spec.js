@@ -59,15 +59,12 @@ describe('Telemetry wiring', () => {
     expect(firstStatement).toBe("const telemetry = require('./telemetry');");
   });
 
-  it('mounts telemetry middleware after static assets and before routes', () => {
+  it('mounts telemetry middleware before routes', () => {
     const telemetryMiddlewareIndex = source.indexOf('app.use(telemetry.telemetryMiddleware);');
-    const staticAssetsIndex = source.indexOf('app.use(staticCache(appConfig.paths.assets));');
     const apiRoutesIndex = source.indexOf("app.use('/api/auth'");
 
     expect(telemetryMiddlewareIndex).toBeGreaterThan(-1);
-    expect(staticAssetsIndex).toBeGreaterThan(-1);
     expect(apiRoutesIndex).toBeGreaterThan(-1);
-    expect(staticAssetsIndex).toBeLessThan(telemetryMiddlewareIndex);
     expect(telemetryMiddlewareIndex).toBeLessThan(apiRoutesIndex);
   });
 
@@ -117,39 +114,7 @@ describe('Server Configuration', () => {
   let mongoServer;
   let app;
 
-  /** Mocked fs.readFileSync for index.html */
-  const originalReadFileSync = fs.readFileSync;
-  beforeAll(() => {
-    fs.readFileSync = function (filepath, options) {
-      if (filepath.includes('index.html')) {
-        return '<!DOCTYPE html><html><head><title>LibreChat</title></head><body><div id="root"></div></body></html>';
-      }
-      return originalReadFileSync(filepath, options);
-    };
-  });
-
-  afterAll(() => {
-    // Restore original fs.readFileSync
-    fs.readFileSync = originalReadFileSync;
-  });
-
   beforeAll(async () => {
-    // Create the required directories and files for the test
-    const fs = require('fs');
-    const path = require('path');
-
-    const dirs = ['/tmp/dist', '/tmp/fonts', '/tmp/assets'];
-    dirs.forEach((dir) => {
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-    });
-
-    fs.writeFileSync(
-      path.join('/tmp/dist', 'index.html'),
-      '<!DOCTYPE html><html><head><title>LibreChat</title></head><body><div id="root"></div></body></html>',
-    );
-
     mongoServer = await MongoMemoryServer.create();
     process.env.MONGO_URI = mongoServer.getUri();
     process.env.PORT = '0'; // Use a random available port
@@ -168,14 +133,6 @@ describe('Server Configuration', () => {
     const response = await request(app).get('/health');
     expect(response.status).toBe(200);
     expect(response.text).toBe('OK');
-  });
-
-  it('should not cache index page', async () => {
-    const response = await request(app).get('/');
-    expect(response.status).toBe(200);
-    expect(response.headers['cache-control']).toBe('no-cache, no-store, must-revalidate');
-    expect(response.headers['pragma']).toBe('no-cache');
-    expect(response.headers['expires']).toBe('0');
   });
 
   it('should return 404 JSON for undefined API routes', async () => {
@@ -206,36 +163,9 @@ describe('Server Configuration', () => {
     expect(response.body).toEqual({ message: 'Endpoint not found' });
   });
 
-  it('should serve SPA HTML for non-API unmatched routes', async () => {
+  it('should return 404 for non-API unmatched routes (no SPA fallback)', async () => {
     const response = await request(app).get('/this/does/not/exist');
-    expect(response.status).toBe(200);
-    expect(response.headers['content-type']).toMatch(/html/);
-  });
-
-  it('should gate React Query Devtools config in SPA HTML by debug header', async () => {
-    const defaultResponse = await request(app).get('/this/does/not/exist');
-    const debugResponse = await request(app)
-      .get('/this/does/not/exist')
-      .set('x-librechat-enable-query-devtools', '1');
-    const directIndexResponse = await request(app)
-      .get('/index.html')
-      .set('x-librechat-enable-query-devtools', '1');
-
-    expect(defaultResponse.status).toBe(200);
-    expect(defaultResponse.headers.vary).toContain('x-librechat-enable-query-devtools');
-    expect(defaultResponse.text).not.toContain('enableQueryDevtools');
-
-    expect(debugResponse.status).toBe(200);
-    expect(debugResponse.headers.vary).toContain('x-librechat-enable-query-devtools');
-    expect(debugResponse.text).toContain('window.__LIBRECHAT_CONFIG__');
-    expect(debugResponse.text).toContain('data-librechat-query-devtools="true"');
-    expect(debugResponse.text).toContain('"enableQueryDevtools":true');
-
-    expect(directIndexResponse.status).toBe(200);
-    expect(directIndexResponse.headers.vary).toContain('x-librechat-enable-query-devtools');
-    expect(directIndexResponse.text).toContain('window.__LIBRECHAT_CONFIG__');
-    expect(directIndexResponse.text).toContain('data-librechat-query-devtools="true"');
-    expect(directIndexResponse.text).toContain('"enableQueryDevtools":true');
+    expect(response.status).toBe(404);
   });
 
   it('should return 500 for unknown errors via ErrorController', async () => {

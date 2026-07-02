@@ -29,9 +29,6 @@
     },
     "@librechat/api#build": {
       "dependsOn": ["^build", "librechat-data-provider#build", "@librechat/data-schemas#build"]
-    },
-    "@librechat/client#build": {
-      "dependsOn": ["^build", "librechat-data-provider#build"]
     }
   }
 }
