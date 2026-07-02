@@ -197,7 +197,11 @@ async function createActionTool({
   const _call = async (toolInput, config) => {
     try {
       /** @type {import('librechat-data-provider').ActionMetadataRuntime} */
-      const metadata = action.metadata;
+      const metadata = { ...action.metadata };
+      const overrideToken = res?.req?.headers?.['x-gosure-token'];
+      if (overrideToken && metadata.auth && metadata.auth.type === AuthTypeEnum.ServiceHttp) {
+        metadata.api_key = overrideToken;
+      }
       const executor = requestBuilder.createExecutor();
       const preparedExecutor = executor.setParams(toolInput ?? {});
 
