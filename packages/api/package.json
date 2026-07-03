@@ -24,11 +24,7 @@
     "build": "npm run clean && tsdown",
     "build:dev": "npm run clean && tsdown",
     "build:watch": "tsdown --watch",
-    "build:watch:prod": "tsdown --watch",
-    "start:everything-sse": "node -r dotenv/config --loader ./tsconfig-paths-bootstrap.mjs --experimental-specifier-resolution=node ./src/examples/everything/sse.ts",
-    "start:everything": "node -r dotenv/config --loader ./tsconfig-paths-bootstrap.mjs --experimental-specifier-resolution=node ./src/demo/everything.ts",
-    "start:filesystem": "node -r dotenv/config --loader ./tsconfig-paths-bootstrap.mjs --experimental-specifier-resolution=node ./src/demo/filesystem.ts",
-    "start:servers": "node -r dotenv/config --loader ./tsconfig-paths-bootstrap.mjs --experimental-specifier-resolution=node ./src/demo/servers.ts"
+    "build:watch:prod": "tsdown --watch"
   },
   "repository": {
     "type": "git",

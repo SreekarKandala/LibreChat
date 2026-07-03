@@ -8,7 +8,6 @@ const {
 const { PermissionBits } = require('librechat-data-provider');
 const {
   moderateText,
-  // validateModel,
   validateConvoAccess,
   buildEndpointOption,
   canAccessAgentFromBody,

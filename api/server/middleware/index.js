@@ -4,9 +4,7 @@ const accessResources = require('./accessResources');
 const abortMiddleware = require('./abortMiddleware');
 const requireJwtAuth = require('./requireJwtAuth');
 const configMiddleware = require('./config/app');
-const validateModel = require('./validateModel');
 const moderateText = require('./moderateText');
-const logHeaders = require('./logHeaders');
 const setHeaders = require('./setHeaders');
 const validate = require('./validate');
 const limiters = require('./limiters');
@@ -21,9 +19,7 @@ module.exports = {
   ...accessResources,
   noIndex,
   setHeaders,
-  logHeaders,
   moderateText,
-  validateModel,
   requireJwtAuth,
   configMiddleware,
   validateMessageReq,
