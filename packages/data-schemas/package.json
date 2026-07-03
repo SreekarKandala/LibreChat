@@ -35,9 +35,7 @@
   "scripts": {
     "clean": "rimraf dist",
     "build": "npm run clean && tsdown",
-    "build:watch": "tsdown --watch",
-    "b:clean": "bun run rimraf dist",
-    "b:build": "bun run b:clean && bun run tsdown"
+    "build:watch": "tsdown --watch"
   },
   "repository": {
     "type": "git",

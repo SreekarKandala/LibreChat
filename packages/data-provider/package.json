@@ -25,9 +25,7 @@
     "clean": "rimraf dist",
     "build": "npm run clean && tsdown && tsc -p tsconfig.build.json",
     "build:watch": "tsdown --watch",
-    "rollup:api": "npx rollup -c server-rollup.config.js --bundleConfigAsCjs",
-    "b:clean": "bun run rimraf dist",
-    "b:build": "bun run b:clean && bun run tsdown && bun run tsc -p tsconfig.build.json"
+    "rollup:api": "npx rollup -c server-rollup.config.js --bundleConfigAsCjs"
   },
   "repository": {
     "type": "git",
