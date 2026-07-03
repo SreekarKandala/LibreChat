@@ -43,7 +43,8 @@
     "sort-imports": "node scripts/sort-imports.mts",
     "sort-imports:check": "node scripts/sort-imports.mts --check",
     "format": "npx prettier --write \"{,!(node_modules|venv)/**/}*.{js,jsx,ts,tsx}\"",
-    "flush-cache": "node config/flush-cache.js"
+    "flush-cache": "node config/flush-cache.js",
+    "smoke": "node scripts/smoke.mjs"
   },
   "repository": {
     "type": "git",
